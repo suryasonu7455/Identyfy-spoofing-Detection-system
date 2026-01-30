@@ -52,15 +52,18 @@ function NewUserEnrollment({ onSuccess }) {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user'
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          facingMode: 'user',
+          focusMode: 'continuous',
+          zoom: 1
         },
         audio: false
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
         // Wait for video to load
         videoRef.current.onloadedmetadata = () => {
           videoRef.current.play().catch(e => console.log('Play error:', e));
@@ -113,23 +116,25 @@ function NewUserEnrollment({ onSuccess }) {
         return;
       }
 
-      // Mirror the image
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0);
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
+      // Simple draw - no mirroring for backend processing
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      canvas.toBlob((blob) => {
-        if (blob) {
-          setCapturedPhoto(blob);
-          setPhotoPreview(URL.createObjectURL(blob));
-          stopCamera();
-          setStep(3); // Go to review
-        } else {
-          setError('❌ Failed to capture photo.');
-        }
-      }, 'image/jpeg', 0.95);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            console.log('Photo captured, blob size:', blob.size);
+            setCapturedPhoto(blob);
+            setPhotoPreview(URL.createObjectURL(blob));
+            stopCamera();
+            setStep(3); // Go to review
+            setError(null);
+          } else {
+            setError('❌ Failed to capture photo. Please try again.');
+          }
+        },
+        'image/jpeg',
+        0.9
+      );
     } catch (err) {
       setError(`❌ Capture error: ${err.message}`);
       console.error('Capture error:', err);
@@ -146,7 +151,7 @@ function NewUserEnrollment({ onSuccess }) {
 
   const submitEnrollment = async () => {
     if (!capturedPhoto) {
-      setError('❌ Photo capture failed. Please try again.');
+      setError('❌ Photo not captured. Please capture a photo first.');
       return;
     }
 
@@ -160,13 +165,20 @@ function NewUserEnrollment({ onSuccess }) {
       formDataToSend.append('phone', formData.phone);
       formDataToSend.append('unit', formData.unit);
       formDataToSend.append('proof_type', formData.proofType);
-      formDataToSend.append('face_image', capturedPhoto);
+      formDataToSend.append('face_image', capturedPhoto, 'photo.jpg');
+
+      console.log('Submitting enrollment with photo size:', capturedPhoto.size);
 
       const response = await axios.post(
-        '/api/enrollment/enroll-new-user',
+        'http://localhost:5000/api/enrollment/enroll-new-user',
         formDataToSend,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        { 
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 10000
+        }
       );
+
+      console.log('Enrollment response:', response.data);
 
       if (response.data.success) {
         setStep(4); // Success screen
@@ -177,8 +189,9 @@ function NewUserEnrollment({ onSuccess }) {
         setError(`❌ ${response.data.error || 'Enrollment failed'}`);
       }
     } catch (err) {
-      setError(`❌ ${err.response?.data?.error || err.message}`);
-      console.error('Enrollment error:', err);
+      console.error('Enrollment error details:', err);
+      const errorMsg = err.response?.data?.error || err.message || 'Network error';
+      setError(`❌ ${errorMsg}`);
     } finally {
       setLoading(false);
     }
