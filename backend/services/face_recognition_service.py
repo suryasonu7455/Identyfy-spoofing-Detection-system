@@ -97,7 +97,6 @@ Handles face detection, embedding extraction, and face-to-ID matching
 
 import cv2
 import numpy as np
-from deepface import DeepFace
 import os
 from typing import Tuple, Dict, Optional
 import json

@@ -53,16 +53,22 @@ function NewUserEnrollment({ onSuccess }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+          height: { ideal: 720 },
+          facingMode: 'user'
+        },
+        audio: false
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Wait for video to load
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play().catch(e => console.log('Play error:', e));
+          setCameraActive(true);
+        };
       }
-      setCameraActive(true);
     } catch (err) {
-      setError('❌ Camera access denied. Please allow camera permissions.');
+      setError('❌ Camera access denied. Please allow camera permissions in browser settings.');
       console.error('Camera error:', err);
     }
   };
@@ -79,32 +85,55 @@ function NewUserEnrollment({ onSuccess }) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (!video || !video.videoWidth) {
-      setError('❌ Camera not ready. Please wait a moment.');
+    if (!video) {
+      setError('❌ Video element not found. Please refresh and try again.');
       return;
     }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) {
-      setError('❌ Canvas error. Please refresh and try again.');
+    // Wait for video to be ready
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      setError('⏳ Camera is loading... Please wait a moment.');
+      setTimeout(capturePhoto, 500);
       return;
     }
 
-    ctx.drawImage(video, 0, 0);
-    
-    canvas.toBlob((blob) => {
-      if (blob) {
-        setCapturedPhoto(blob);
-        setPhotoPreview(URL.createObjectURL(blob));
-        stopCamera();
-        setStep(3); // Go to review
-      } else {
-        setError('❌ Failed to capture photo.');
+    if (!video.videoWidth || !video.videoHeight) {
+      setError('❌ Camera feed not ready. Please wait and try again.');
+      setTimeout(capturePhoto, 500);
+      return;
+    }
+
+    try {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        setError('❌ Canvas error. Please refresh and try again.');
+        return;
       }
-    }, 'image/jpeg', 0.95);
+
+      // Mirror the image
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          setCapturedPhoto(blob);
+          setPhotoPreview(URL.createObjectURL(blob));
+          stopCamera();
+          setStep(3); // Go to review
+        } else {
+          setError('❌ Failed to capture photo.');
+        }
+      }, 'image/jpeg', 0.95);
+    } catch (err) {
+      setError(`❌ Capture error: ${err.message}`);
+      console.error('Capture error:', err);
+    }
   };
 
   const validateStep1 = () => {
@@ -268,6 +297,7 @@ function NewUserEnrollment({ onSuccess }) {
                   autoPlay
                   playsInline
                   muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
                 <div className="camera-guide">
