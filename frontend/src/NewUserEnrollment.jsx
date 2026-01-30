@@ -203,7 +203,7 @@ function NewUserEnrollment({ onSuccess }) {
       {step === 1 && (
         <div className="enrollment-section">
           <h2>📋 Personal Information</h2>
-          <form>
+          <div>
             <div className="form-group">
               <label>Full Name *</label>
               <input
@@ -272,7 +272,7 @@ function NewUserEnrollment({ onSuccess }) {
             >
               Continue to Face Capture →
             </button>
-          </form>
+          </div>
         </div>
       )}
 
