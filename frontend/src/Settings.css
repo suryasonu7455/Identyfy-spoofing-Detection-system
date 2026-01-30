@@ -63,6 +63,7 @@
   background: var(--dark-bg);
   border-radius: 3px;
   outline: none;
+  appearance: none;
   -webkit-appearance: none;
 }
 
@@ -138,7 +139,7 @@
   bottom: 4px;
   background-color: white;
   transition: 0.4s;
-  border-radius: 50%;
+  appearance: none;
 }
 
 input:checked + .slider {

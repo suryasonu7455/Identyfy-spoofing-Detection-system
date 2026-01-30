@@ -7,12 +7,20 @@ import Analytics from './Analytics';
 import Settings from './Settings';
 import NewUserEnrollment from './NewUserEnrollment';
 import SecurityVerification from './SecurityVerification';
+import LandingPage from './LandingPage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('landing');
 
   const renderPage = () => {
     switch(currentPage) {
+      case 'landing':
+        return (
+          <LandingPage
+            onSelectEnroll={() => setCurrentPage('enroll')}
+            onSelectVerify={() => setCurrentPage('verify')}
+          />
+        );
       case 'dashboard':
         return <Dashboard />;
       case 'enroll':
@@ -42,6 +50,14 @@ function App() {
         </div>
         
         <div className="nav-menu">
+          <button 
+            className={`nav-item ${currentPage === 'landing' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('landing')}
+          >
+            <span className="nav-icon">🏠</span>
+            <span>Home</span>
+          </button>
+
           <button 
             className={`nav-item ${currentPage === 'dashboard' ? 'active' : ''}`}
             onClick={() => setCurrentPage('dashboard')}

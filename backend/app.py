@@ -39,7 +39,7 @@ from routes.enrollment_routes import enrollment_routes
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(access_bp, url_prefix='/api/access')
-app.register_blueprint(enrollment_routes, url_prefix='/api/enrollment')
+app.register_blueprint(enrollment_routes)
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(demo_bp, url_prefix='/api/demo')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')

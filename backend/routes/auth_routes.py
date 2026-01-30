@@ -1,4 +1,4 @@
-                                                                                                                                                                                                                                                                                                                        """
+"""
 Authentication and User Management Routes
 """
 

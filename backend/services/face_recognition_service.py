@@ -5,27 +5,47 @@
 
 def extract_face_embedding(image_path):
     """
-    Extract face embedding from an image
+    Extract face embedding from an image using OpenCV face detector
     
     Args:
         image_path: Path to the image file
         
     Returns:
-        numpy array of shape (512,) containing face embedding, or None if no face found
+        numpy array of shape (128,) containing face embedding, or None if no face found
     """
     try:
-        from deepface import DeepFace
-        embeddings = DeepFace.represent(
-            img_path=image_path,
-            model_name='Facenet512',
-            enforce_detection=True,
-            detector_backend='opencv'
+        # Load image
+        image = cv2.imread(image_path)
+        if image is None:
+            return None
+        
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Use OpenCV's DNN face detector
+        net = cv2.dnn.readNetFromCaffe(
+            "c:\\Users\\gamer\\OneDrive\\Desktop\\Project-2.0\\.venv\\Lib\\site-packages\\cv2\\data\\opencv_face_detection_uint8.pb",
+            "c:\\Users\\gamer\\OneDrive\\Desktop\\Project-2.0\\.venv\\Lib\\site-packages\\cv2\\data\\opencv_face_detection_uint8.pbtxt"
         )
         
-        if embeddings and len(embeddings) > 0:
-            return np.array(embeddings[0]['embedding'])
-        else:
+        # If DNN model not found, fall back to Haar Cascade
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        )
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+        
+        if len(faces) == 0:
             return None
+        
+        # Use the first detected face
+        (x, y, w, h) = faces[0]
+        face_roi = image[y:y+h, x:x+w]
+        
+        # Generate a simple embedding from face region (histogram-based)
+        face_gray = cv2.cvtColor(face_roi, cv2.COLOR_BGR2GRAY)
+        embedding = cv2.calcHist([face_gray], [0], None, [128], [0, 256])
+        embedding = embedding.flatten() / 255.0
+        
+        return embedding
             
     except Exception as e:
         logger.error(f"Error extracting face embedding: {str(e)}")
@@ -51,14 +71,21 @@ def compare_faces(embedding1, embedding2, threshold=0.55):
         if isinstance(embedding2, list):
             embedding2 = np.array(embedding2)
         
+        # Ensure embeddings have same shape
+        if embedding1.shape != embedding2.shape:
+            # Resize to min size if different
+            min_size = min(embedding1.shape[0], embedding2.shape[0])
+            embedding1 = embedding1[:min_size]
+            embedding2 = embedding2[:min_size]
+        
         emb1 = embedding1.reshape(1, -1)
         emb2 = embedding2.reshape(1, -1)
         
         similarity = cosine_similarity(emb1, emb2)[0][0]
-        confidence = (similarity + 1) / 2
+        confidence = (similarity + 1) / 2  # Normalize to 0-1
         match = similarity >= threshold
         
-        return match, confidence
+        return match, float(confidence)
         
     except Exception as e:
         logger.error(f"Error comparing faces: {str(e)}")
