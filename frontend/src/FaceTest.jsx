@@ -56,10 +56,22 @@ function FaceTest() {
 
   const captureEnrollPhoto = () => {
     const video = enrollVideoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      alert('Camera not ready. Please wait a moment and try again.');
+      return;
+    }
+    
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      alert('Canvas context error');
+      return;
+    }
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     canvas.toBlob((blob) => {
       if (blob) {
@@ -67,8 +79,11 @@ function FaceTest() {
         setEnrollImage(file);
         setEnrollPreview(URL.createObjectURL(blob));
         stopEnrollCamera();
+        alert('✅ Photo captured successfully! Now click Enroll Face.');
+      } else {
+        alert('Failed to capture photo. Please try again.');
       }
-    }, 'image/jpeg');
+    }, 'image/jpeg', 0.95);
   };
 
   const startVerifyCamera = async () => {
@@ -98,10 +113,22 @@ function FaceTest() {
 
   const captureVerifyPhoto = () => {
     const video = verifyVideoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      alert('Camera not ready. Please wait a moment and try again.');
+      return;
+    }
+    
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      alert('Canvas context error');
+      return;
+    }
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     canvas.toBlob((blob) => {
       if (blob) {
@@ -109,8 +136,11 @@ function FaceTest() {
         setVerifyImage(file);
         setVerifyPreview(URL.createObjectURL(blob));
         stopVerifyCamera();
+        alert('✅ Photo captured successfully! Now click Verify Access.');
+      } else {
+        alert('Failed to capture photo. Please try again.');
       }
-    }, 'image/jpeg');
+    }, 'image/jpeg', 0.95);
   };
 
   const handleEnrollImageChange = (e) => {

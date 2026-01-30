@@ -1,3 +1,68 @@
+
+# ============================================================================
+# STANDALONE FUNCTIONS FOR NEW ENROLLMENT/VERIFICATION WORKFLOW
+# ============================================================================
+
+def extract_face_embedding(image_path):
+    """
+    Extract face embedding from an image
+    
+    Args:
+        image_path: Path to the image file
+        
+    Returns:
+        numpy array of shape (512,) containing face embedding, or None if no face found
+    """
+    try:
+        from deepface import DeepFace
+        embeddings = DeepFace.represent(
+            img_path=image_path,
+            model_name='Facenet512',
+            enforce_detection=True,
+            detector_backend='opencv'
+        )
+        
+        if embeddings and len(embeddings) > 0:
+            return np.array(embeddings[0]['embedding'])
+        else:
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error extracting face embedding: {str(e)}")
+        return None
+
+def compare_faces(embedding1, embedding2, threshold=0.55):
+    """
+    Compare two face embeddings
+    
+    Args:
+        embedding1: numpy array or list
+        embedding2: numpy array or list
+        threshold: similarity threshold (0-1)
+        
+    Returns:
+        tuple (match: bool, confidence: float)
+    """
+    try:
+        from sklearn.metrics.pairwise import cosine_similarity
+        
+        if isinstance(embedding1, list):
+            embedding1 = np.array(embedding1)
+        if isinstance(embedding2, list):
+            embedding2 = np.array(embedding2)
+        
+        emb1 = embedding1.reshape(1, -1)
+        emb2 = embedding2.reshape(1, -1)
+        
+        similarity = cosine_similarity(emb1, emb2)[0][0]
+        confidence = (similarity + 1) / 2
+        match = similarity >= threshold
+        
+        return match, confidence
+        
+    except Exception as e:
+        logger.error(f"Error comparing faces: {str(e)}")
+        return False, 0.0
 """
 Face Recognition Service - Core ML Module
 Handles face detection, embedding extraction, and face-to-ID matching

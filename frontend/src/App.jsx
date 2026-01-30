@@ -5,6 +5,8 @@ import LiveVerification from './LiveVerification';
 import AdminPanel from './AdminPanel';
 import Analytics from './Analytics';
 import Settings from './Settings';
+import NewUserEnrollment from './NewUserEnrollment';
+import SecurityVerification from './SecurityVerification';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -13,6 +15,10 @@ function App() {
     switch(currentPage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'enroll':
+        return <NewUserEnrollment />;
+      case 'verify':
+        return <SecurityVerification />;
       case 'live':
         return <LiveVerification />;
       case 'admin':
@@ -42,6 +48,22 @@ function App() {
           >
             <span className="nav-icon">📊</span>
             <span>Dashboard</span>
+          </button>
+          
+          <button 
+            className={`nav-item ${currentPage === 'enroll' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('enroll')}
+          >
+            <span className="nav-icon">👤</span>
+            <span>Enroll User</span>
+          </button>
+
+          <button 
+            className={`nav-item ${currentPage === 'verify' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('verify')}
+          >
+            <span className="nav-icon">🔒</span>
+            <span>Verify Access</span>
           </button>
           
           <button 
